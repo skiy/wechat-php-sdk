@@ -223,6 +223,7 @@ class Wechat {
     //支付功能相关接口
     const PAY_UNIFIEDORDER = '/pay/unifiedorder?'; //统一下单
     const PAY_ORDERQUERY = '/pay/orderquery?'; //查询订单
+    const SECAPI_PAY_REFUND = '/secapi/pay/refund'; //申请退款
 
     private $token;
     private $encodingAesKey;
@@ -233,9 +234,6 @@ class Wechat {
     private $jsapi_ticket;
     private $api_ticket;
     private $user_token;
-    private $partnerid;
-    private $partnerkey;
-    private $paysignkey;
     private $postxml;
     private $_msg;
     private $_funcflag = false;
@@ -248,6 +246,7 @@ class Wechat {
 
     private $mch_id; //商户ID
     private $mch_api_key; //商户API密钥
+    private $mch_sign_key; //商户证书密钥
 
     public function __construct($options) {
         $this->token = isset($options['token']) ? $options['token'] : '';
@@ -258,6 +257,7 @@ class Wechat {
         $this->logcallback = isset($options['logcallback']) ? $options['logcallback'] : false;
         $this->mch_id = isset($options['mch_id']) ? $options['mch_id'] : '';
         $this->mch_api_key = isset($options['mch_api_key']) ? $options['mch_api_key'] : '';
+        $this->mch_sign_key = isset($options['mch_sign_key']) ? $options['mch_sign_key'] : '';
     }
 
     /**
@@ -273,6 +273,7 @@ class Wechat {
         $this->logcallback = isset($options['logcallback']) ? $options['logcallback'] : false;
         $this->mch_id = isset($options['mch_id']) ? $options['mch_id'] : '';
         $this->mch_api_key = isset($options['mch_api_key']) ? $options['mch_api_key'] : '';
+        $this->mch_sign_key = isset($options['mch_sign_key']) ? $options['mch_sign_key'] : '';
     }
 
     /**
@@ -4723,6 +4724,63 @@ class Wechat {
 //        $xmldata = $this->array2xml($params);
         $xmldata = $this->xml_encode($params);
         $result = $this->http_post(self::API_PAY_PREFIX . self::PAY_ORDERQUERY, $xmldata);
+        if ($result) {
+            $json = (array)simplexml_load_string($result, 'SimpleXMLElement', LIBXML_NOCDATA);
+
+            if ($json['return_code'] != "SUCCESS") { //通信失败
+                $this->errCode = $json['return_code'];
+                $this->errMsg = $json['return_msg'];
+                return false;
+            } else if ($json['result_code'] != "SUCCESS") { //查询失败
+                $this->errCode = $json['err_code'];
+                $this->errMsg = $json['err_code_des'];
+                return false;
+            }
+            return $json;
+        }
+        return false;
+    }
+
+    /**
+     * 申请退款
+     * @param array $arr
+     * @return array|bool
+     */
+    public function secapi_pay_refund($arr = array()) {
+        if (empty($arr['transaction_id']) && empty($arr['out_trade_no']) || empty($arr['out_refund_no']) || empty($arr['total_fee']) || empty($arr['refund_fee'])) {
+            return false;
+        }
+
+        $params = [
+            'appid' => $this->appid,
+            'mch_id' => $this->mch_id,
+            'nonce_str' => $this->generateNonceStr(),
+            'out_refund_no' => $arr['out_refund_no'],
+            'total_fee' => $arr['total_fee'],
+            'refund_fee' => $arr['refund_fee'],
+        ];
+
+        if (isset($arr['transaction_id'])) {
+            $params['transaction_id'] = $arr['transaction_id'];
+        }
+
+        if (! isset($params['transaction_id'])) {
+            $params['out_trade_no'] = $arr['out_trade_no'];
+        }
+
+        if (isset($arr['refund_desc'])) {
+            $params['refund_desc'] = $arr['refund_desc'];
+        }
+
+        if (isset($arr['notify_url'])) {
+            $params['notify_url'] = $arr['notify_url'];
+        }
+
+        $paySign = $this->getPaySignature($params);
+        $params['sign'] = $paySign;
+
+        $xmldata = $this->xml_encode($params);
+        $result = $this->http_post(self::API_PAY_PREFIX . self::SECAPI_PAY_REFUND, $xmldata);
         if ($result) {
             $json = (array)simplexml_load_string($result, 'SimpleXMLElement', LIBXML_NOCDATA);
 
