@@ -1,7 +1,10 @@
 <?php
 
 /**
- *    微信公众平台PHP-SDK, 官方API部分
+ * 微信公众平台PHP-SDK, 官方API部分
+ * @author Skiychan <dev@skiy.net>
+ * @link https://github.com/skiy/wechat-php-sdk
+ *
  * @author  dodge <dodgepudding@gmail.com>
  * @link https://github.com/dodgepudding/wechat-php-sdk
  * @version 1.2
@@ -246,7 +249,9 @@ class Wechat {
 
     private $mch_id; //商户ID
     private $mch_api_key; //商户API密钥
-    private $mch_sign_key; //商户证书密钥
+
+    public $sslcert = ''; //商户证书 的路径
+    public $sslkey = ''; //商户证书密钥 的路径
 
     public function __construct($options) {
         $this->token = isset($options['token']) ? $options['token'] : '';
@@ -257,7 +262,6 @@ class Wechat {
         $this->logcallback = isset($options['logcallback']) ? $options['logcallback'] : false;
         $this->mch_id = isset($options['mch_id']) ? $options['mch_id'] : '';
         $this->mch_api_key = isset($options['mch_api_key']) ? $options['mch_api_key'] : '';
-        $this->mch_sign_key = isset($options['mch_sign_key']) ? $options['mch_sign_key'] : '';
     }
 
     /**
@@ -273,7 +277,6 @@ class Wechat {
         $this->logcallback = isset($options['logcallback']) ? $options['logcallback'] : false;
         $this->mch_id = isset($options['mch_id']) ? $options['mch_id'] : '';
         $this->mch_api_key = isset($options['mch_api_key']) ? $options['mch_api_key'] : '';
-        $this->mch_sign_key = isset($options['mch_sign_key']) ? $options['mch_sign_key'] : '';
     }
 
     /**
@@ -1138,12 +1141,17 @@ class Wechat {
      * @param boolean $post_file 是否文件上传
      * @return string content
      */
-    private function http_post($url, $param, $post_file = false) {
+    private function http_post($url, $param, $post_file = false, $use_cert = false, $second = 30) {
         $oCurl = curl_init();
+
+        //设置超时
+        curl_setopt($oCurl, CURLOPT_TIMEOUT, $second);
+
         if (stripos($url, "https://") !== FALSE) {
-            curl_setopt($oCurl, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($oCurl, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($oCurl, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($oCurl, CURLOPT_SSLVERSION, 1); //CURL_SSLVERSION_TLSv1
+            //curl_setopt($oCurl, CURLOPT_SSLVERSION, 1); //CURL_SSLVERSION_TLSv1
+            curl_setopt($oCurl,CURLOPT_SSL_VERIFYHOST,2);//严格校验
         }
         if (PHP_VERSION_ID >= 50500 && class_exists('\CURLFile')) {
             $is_curlFile = true;
@@ -1175,6 +1183,24 @@ class Wechat {
         curl_setopt($oCurl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($oCurl, CURLOPT_POST, true);
         curl_setopt($oCurl, CURLOPT_POSTFIELDS, $strPOST);
+
+        //设置header
+        curl_setopt($oCurl, CURLOPT_HEADER, false);
+
+        //设置证书
+        if($use_cert == true){
+            //第一种方法，cert 与 key 分别属于两个.pem文件
+            //第二种方式，两个文件合成一个.pem文件
+            curl_setopt($oCurl,CURLOPT_SSLCERTTYPE,'PEM');
+            curl_setopt($oCurl,CURLOPT_SSLCERT, $this->sslcert);
+
+            //第一种方式
+            if ($this->sslkey !== '') {
+                curl_setopt($oCurl,CURLOPT_SSLKEYTYPE,'PEM');
+                curl_setopt($oCurl,CURLOPT_SSLKEY, $this->sslkey);
+            }
+        }
+
         $sContent = curl_exec($oCurl);
         $aStatus = curl_getinfo($oCurl);
         curl_close($oCurl);
@@ -4746,8 +4772,8 @@ class Wechat {
      * @param array $arr
      * @return array|bool
      */
-    public function secapi_pay_refund($arr = array()) {
-        if (empty($arr['transaction_id']) && empty($arr['out_trade_no']) || empty($arr['out_refund_no']) || empty($arr['total_fee']) || empty($arr['refund_fee'])) {
+    public function SecapiPayRefund($arr = array()) {
+        if ((empty($arr['transaction_id']) && empty($arr['out_trade_no'])) || empty($arr['out_refund_no']) || empty($arr['total_fee']) || empty($arr['refund_fee'])) {
             return false;
         }
 
@@ -4780,7 +4806,7 @@ class Wechat {
         $params['sign'] = $paySign;
 
         $xmldata = $this->xml_encode($params);
-        $result = $this->http_post(self::API_PAY_PREFIX . self::SECAPI_PAY_REFUND, $xmldata);
+        $result = $this->http_post(self::API_PAY_PREFIX . self::SECAPI_PAY_REFUND, $xmldata, false, true);
         if ($result) {
             $json = (array)simplexml_load_string($result, 'SimpleXMLElement', LIBXML_NOCDATA);
 

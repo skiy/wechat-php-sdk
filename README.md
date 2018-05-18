@@ -2,9 +2,7 @@ wechat-php-sdk
 ==============
 
 微信公众平台php开发包,细化各项接口操作,支持链式调用,欢迎Fork此项目  
-weixin developer SDK.
-项目地址：**https://github.com/dodgepudding/wechat-php-sdk**  
-项目blog：**http://binsee.github.io/wechat-php-sdk**  
+基于 [wechat-php-sdk](https://github.com/dodgepudding/wechat-php-sdk)
 
 ## 使用详解
 使用前需先打开微信帐号的开发模式，详细步骤请查看微信公众平台接口使用说明：  
@@ -22,9 +20,6 @@ https://mp.weixin.qq.com/cgi-bin/readtemplate?t=business/course2_tmpl&lang=zh_CN
 > **[qywechat.class.php 企业号API类库](#user-content-6-qywechatclassphp-企业号api类库)**  
 > **[errCode.php|qyerrCode.php 全局返回码类](#user-content-5-errcodephp-全局返回码类)**  
 > **[old_version/wechatpay.class.php 旧版微信支付V2接口类库](#user-content-7-wechatpayclassphp-旧版微信支付V2接口类库)**  
-> ~~**[old_version/wechatext.class.php 非官方扩展API(停止维护)](#user-content-2-wechatextclassphp-非官方扩展api)**~~  
-> ~~**[old_version/wechatauth.class.php 授权登陆(停止维护)](#user-content-3-wechatauthclassphp-授权登陆)**~~  
-> ~~**[old_version/wechat.js 内嵌JS(已废弃)](#user-content-4-wechatjs-内嵌js)**~~  
 > **[为开发框架进行适配](#user-content-为开发框架进行适配)**  
 > **[调用示例](#user-content-调用示例)**  
 
@@ -313,38 +308,6 @@ const EVENT_CARD_USER_DEL = 'user_del_card';        //卡券 - 用户删除卡�
  *  get_login_info() 鉴定成功后调用此方法即可获取用户基本信息  
  *  get_avatar($url) 获取用户头像图片数据  
  *  logout() 注销登陆  
-
-## ~~4. wechat.js 内嵌JS~~
-**此JS脚本已经废弃不再更新，原因是官方在微信6.0.2版本开放了全新的JSAPI接口，更全面好用。请查看：[微信公众平台WIKI](http://mp.weixin.qq.com/wiki)**
-### 微信内嵌网页特殊功能js调用：
- * WeixinJS.hideOptionMenu() 隐藏右上角按钮
- * WeixinJS.showOptionMenu() 显示右上角按钮
- * WeixinJS.hideToolbar() 隐藏工具栏
- * WeixinJS.showToolbar() 显示工具栏
- * WeixinJS.getNetworkType() 获取网络状态
- * WeixinJS.closeWindow() 关闭窗口
- * WeixinJS.scanQRCode() 扫描二维码
- * WeixinJS.openUrlByExtBrowser(url) 使用浏览器打开网址
- * WeixinJS.jumpToBizProfile(username) 跳转到指定公众账号页面
- * WeixinJS.sendEmail(title,content) 发送邮件
- * WeixinJS.openProductView(latitude,longitude,name,address,scale,infoUrl) 查看地图
- * WeixinJS.addContact(username) 添加微信账号
- * WeixinJS.imagePreview(urls,current) 调出微信内图片预览
- * WeixinJS.payCallback(appId,package,timeStamp,nonceStr,signType,paySign,callback) 微信JsApi支付接口
- * WeixinJS.editAddress(appId,addrSign,timeStamp,nonceStr,callback) 微信JsApi支付接口
- * 通过定义全局变量dataForWeixin配置触发分享的内容：
- ```javascript
- var dataForWeixin={
-	   appId:"",
-	   MsgImg:"消息图片路径",
-	   TLImg:"时间线图路径",
-	   url:"分享url路径",
-	   title:"标题",
-	   desc:"描述",
-	   fakeid:"",
-	   callback:function(){}
-	};
- ```
 
 ## 5. errCode.php 全局返回码类
 当调用API接口失败时，可以用此类来获取失败原因的中文说明。  
